@@ -13,6 +13,7 @@ type Tile struct {
 	RealCoordinates Coordinates
 	TileImage       *ebiten.Image
 	Links           TileLink
+	calculated      bool
 }
 
 // The definition of a link. Tiles are linked together, this is how that is done
@@ -29,6 +30,7 @@ func (t *Tile) InitializeTileWithCoords(_tileHeight, _tileWidth float64, _color 
 	t.Width = _tileWidth
 	t.Color = _color
 	t.RealCoordinates = _realCoordinates
+	t.calculated = true
 }
 
 // Initializes a tile without a set of coordinates. This is used for every tile that isn't the first because that tile's coordinates is decided based on links and tile size
@@ -36,6 +38,7 @@ func (t *Tile) InitializeTile(_tileHeight, _tileWidth float64, _color color.Colo
 	t.Height = _tileHeight
 	t.Width = _tileWidth
 	t.Color = _color
+	t.calculated = false
 }
 
 // Generates an image for the specific tile based on the tile's color. This will be changed in the future for sprites
@@ -46,31 +49,44 @@ func (t *Tile) GenerateImage() {
 
 // Sets a tile offset from another tile in the specified direction. Starting with _tile1. e.g. If I provide Tile1, Tile2, "top", then it will put tile2 on top of tile1.
 func (t *Tile) LinkTiles(_tile1, _tile2 *Tile, direction string) {
-	if direction == "top" {
-		_tile1.Links.top = _tile2
-		_tile2.Links.bottom = _tile1
-		_tile2.RealCoordinates.X = _tile1.RealCoordinates.X
-		_tile2.RealCoordinates.Y = _tile1.RealCoordinates.Y + _tile1.Height
+
+	if !t.calculated {
+		if direction == "top" {
+			_tile1.Links.top = _tile2
+			_tile2.Links.bottom = _tile1
+			_tile2.RealCoordinates.X = _tile1.RealCoordinates.X
+			_tile2.RealCoordinates.Y = _tile1.RealCoordinates.Y + _tile1.Height
+
+		}
+
+		if direction == "bottom" {
+			if _tile1.Links.bottom != _tile2 {
+				_tile1.Links.bottom = _tile2
+				_tile2.Links.top = _tile1
+				_tile2.RealCoordinates.X = _tile1.RealCoordinates.X
+				_tile2.RealCoordinates.Y = _tile1.RealCoordinates.Y - _tile1.Height
+			}
+
+		}
+
+		if direction == "left" {
+			if _tile1.Links.left != _tile2 {
+				_tile1.Links.left = _tile2
+				_tile2.Links.right = _tile1
+				_tile2.RealCoordinates.X = _tile1.RealCoordinates.X + _tile1.Width
+				_tile2.RealCoordinates.Y = _tile1.RealCoordinates.Y
+			}
+
+		}
+
+		if direction == "right" {
+			_tile1.Links.right = _tile2
+			_tile2.Links.left = _tile1
+			_tile2.RealCoordinates.X = _tile1.RealCoordinates.X - _tile1.Width
+			_tile2.RealCoordinates.Y = _tile1.RealCoordinates.Y
+
+		}
 	}
 
-	if direction == "bottom" {
-		_tile1.Links.bottom = _tile2
-		_tile2.Links.top = _tile1
-		_tile2.RealCoordinates.X = _tile1.RealCoordinates.X
-		_tile2.RealCoordinates.Y = _tile1.RealCoordinates.Y - _tile1.Height
-	}
-
-	if direction == "left" {
-		_tile1.Links.left = _tile2
-		_tile2.Links.right = _tile1
-		_tile2.RealCoordinates.X = _tile1.RealCoordinates.X + _tile1.Width
-		_tile2.RealCoordinates.Y = _tile1.RealCoordinates.Y
-	}
-
-	if direction == "right" {
-		_tile1.Links.right = _tile2
-		_tile2.Links.left = _tile1
-		_tile2.RealCoordinates.X = _tile1.RealCoordinates.X - _tile1.Width
-		_tile2.RealCoordinates.Y = _tile1.RealCoordinates.Y
-	}
+	t.calculated = true
 }

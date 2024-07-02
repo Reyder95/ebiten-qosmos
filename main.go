@@ -7,6 +7,7 @@
 package main
 
 import (
+	"fmt"
 	"image/color"
 	"log"
 
@@ -72,7 +73,6 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	i := 0
 
 	for {
-
 		if i > len(gameWorld.tileList)-1 {
 			break
 		}
@@ -93,42 +93,36 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (_screenWidth, _screenHei
 func main() {
 	mainCamera.InitializeCamera(0, 0) // Initialize the camera at coordinate (0, 0) of the game world
 
-	var tileWorld []ebitenqosmosclasses.Tile // Global slice of all tiles that will be a part of this world
-	var currTile ebitenqosmosclasses.Tile    // The current tile we are modifying and adding to the tile world
+	var tileWorld [][]ebitenqosmosclasses.Tile
+	var tileRow []ebitenqosmosclasses.Tile
+	var tileColor color.Color
+	rowColLimit := 100
 
-	// Initialize the "starter" tile at position (0, 0) and generate the image for that tile (should maybe move generateImage into the tile initialization function)
-	currTile.InitializeTileWithCoords(tileSize, tileSize, color.White, ebitenqosmosclasses.Coordinates{X: 0.0, Y: 0.0})
-	currTile.GenerateImage()
+	for j := 0; j < rowColLimit; j++ {
+		for i := 0; i < rowColLimit; i++ {
+			singleTile := ebitenqosmosclasses.Tile{}
 
-	tileWorld = append(tileWorld, currTile) // Add the tile to the game world
+			if (i+j)%2 == 0 {
+				tileColor = color.White
+			} else {
+				tileColor = color.RGBA{R: 100, G: 100, B: 100, A: 255}
+			}
 
-	i := 0
-	for {
-		// Set the tile color based on if "i" is even or not. This is purely just for viewing different tiles in the game world.
-		var tileColor color.Color
+			fmt.Println("X,Y ", i, j)
+			fmt.Println("I+J%2 ", (i+j)%2)
+			fmt.Println("Color: ", tileColor)
 
-		if i%2 == 0 {
-			tileColor = color.White
-		} else {
-			tileColor = color.RGBA{R: 10, G: 30, B: 100}
+			singleTile.InitializeTileWithCoords(tileSize, tileSize, tileColor, ebitenqosmosclasses.Coordinates{X: float64(tileSize * i), Y: float64(tileSize * j)})
+
+			singleTile.GenerateImage()
+
+			tileRow = append(tileRow, singleTile)
+
+			gameWorld.tileList = append(gameWorld.tileList, singleTile)
 		}
 
-		// Initialize the next tile, link the previous tile to the next tile, and generate the image for that tile. This will need to be redone depending on what is sent to this module. Such as a 2d slice of images or elements.
-		currTile.InitializeTile(tileSize, tileSize, tileColor)
-		currTile.LinkTiles(&tileWorld[len(tileWorld)-1], &currTile, "top")
-		currTile.GenerateImage()
-
-		// Add the current tile to the game world
-		tileWorld = append(tileWorld, currTile)
-
-		if i > 9 {
-			break
-		}
-
-		i++
+		tileWorld = append(tileWorld, tileRow)
 	}
-
-	gameWorld.initializeGameWorld(10000, 10000, tileWorld) // Initialize the game world with a width of 10,000 and a height of 10,000. Send in the slice of tiles.
 
 	// ebiten setting basic window options
 	ebiten.SetWindowSize(screenWidth, screenHeight)
