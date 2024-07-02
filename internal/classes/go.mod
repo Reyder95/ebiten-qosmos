@@ -1,9 +1,10 @@
-module github.com/Reyder95/PracticeGame
+module example.com/ebiten-qosmos-classes
 
 go 1.22.4
 
+replace example.com/ebiten-qosmos-utils => ../utils
+
 require (
-	example.com/ebiten-qosmos-classes v0.0.0-00010101000000-000000000000
 	example.com/ebiten-qosmos-utils v0.0.0-00010101000000-000000000000
 	github.com/hajimehoshi/ebiten/v2 v2.7.6
 )
@@ -16,7 +17,3 @@ require (
 	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.20.0 // indirect
 )
-
-replace example.com/ebiten-qosmos-utils => ./internal/utils
-
-replace example.com/ebiten-qosmos-classes => ./internal/classes
