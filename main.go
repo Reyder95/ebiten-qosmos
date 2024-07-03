@@ -35,7 +35,7 @@ type Game struct{}
 const (
 	screenWidth  = 1280
 	screenHeight = 720
-	tileSize     = 30
+	tileSize     = 6
 )
 
 // Variables that are chaneable and assignable
@@ -91,14 +91,24 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (_screenWidth, _screenHei
 }
 
 func main() {
-	mainCamera.InitializeCamera(0, 0) // Initialize the camera at coordinate (0, 0) of the game world
+	mainCamera.InitializeCamera(-400, -350) // Initialize the camera at coordinate (0, 0) of the game world
 
+	// var tileWorld [][]ebitenqosmosclasses.Tile
+	// rowColLimit := 100
+
+	// for j := 0; j < rowColLimit; j++ {
+	// 	for i := 0; i < rowColLimit; i++ {
+
+	// 	}
+	// }
+
+	// gameWorld.tileList = gameWorld.tileList.append
 	var tileWorld [][]ebitenqosmosclasses.Tile
-	var tileRow []ebitenqosmosclasses.Tile
 	var tileColor color.Color
 	rowColLimit := 100
 
 	for j := 0; j < rowColLimit; j++ {
+		var tileRow []ebitenqosmosclasses.Tile
 		for i := 0; i < rowColLimit; i++ {
 			singleTile := ebitenqosmosclasses.Tile{}
 
@@ -108,20 +118,59 @@ func main() {
 				tileColor = color.RGBA{R: 100, G: 100, B: 100, A: 255}
 			}
 
-			fmt.Println("X,Y ", i, j)
-			fmt.Println("I+J%2 ", (i+j)%2)
-			fmt.Println("Color: ", tileColor)
-
 			singleTile.InitializeTileWithCoords(tileSize, tileSize, tileColor, ebitenqosmosclasses.Coordinates{X: float64(tileSize * i), Y: float64(tileSize * j)})
 
 			singleTile.GenerateImage()
 
+			fmt.Println("Tile Coords: X: ", float64(tileSize*i), " Y: ", float64(tileSize*j))
+
 			tileRow = append(tileRow, singleTile)
 
-			gameWorld.tileList = append(gameWorld.tileList, singleTile)
+			//gameWorld.tileList = append(gameWorld.tileList, singleTile)
 		}
 
 		tileWorld = append(tileWorld, tileRow)
+	}
+
+	var worldChunks []ebitenqosmosclasses.Chunk
+	chunkSize := 16
+	chunkCount := 0
+
+	for startJ := 0; startJ < len(tileWorld); startJ += chunkSize {
+		for startI := 0; startI < len(tileWorld[startJ]); startI += chunkSize {
+			chunkCount++
+			newChunk := ebitenqosmosclasses.Chunk{}
+
+			for j := startJ; j < startJ+chunkSize; j++ {
+				if j >= len(tileWorld) {
+					break
+				}
+
+				for i := startI; i < startI+chunkSize; i++ {
+					if i >= len(tileWorld[j]) {
+						break
+					}
+					newChunk.TileList = append(newChunk.TileList, tileWorld[j][i])
+					tileWorld[j][i].Color = color.RGBA{R: uint8(30 * chunkCount), G: uint8(30 * chunkCount), B: uint8(30 * chunkCount), A: 255}
+					tileWorld[j][i].GenerateImage()
+					gameWorld.tileList = append(gameWorld.tileList, tileWorld[j][i])
+				}
+			}
+
+			worldChunks = append(worldChunks, newChunk)
+		}
+	}
+
+	// Example output
+	for _, chunk := range worldChunks {
+		fmt.Printf("Chunk with %d tiles\n", len(chunk.TileList))
+	}
+
+	// fmt.Println(len(gameWorld.tileList))
+
+	// //Example output
+	for _, chunk := range worldChunks {
+		fmt.Printf("Chunk with %d tiles\n", len(chunk.TileList))
 	}
 
 	// ebiten setting basic window options
