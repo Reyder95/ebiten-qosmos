@@ -6,5 +6,5 @@ type Grid struct {
 }
 
 type GridKey struct {
-	x, y int
+	X, Y int
 }

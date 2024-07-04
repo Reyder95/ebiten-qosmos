@@ -7,7 +7,7 @@
 package main
 
 import (
-	"fmt"
+	//"fmt"
 	"image/color"
 	"log"
 
@@ -18,9 +18,10 @@ import (
 
 // The game world entirely. A list of all tiles, and the global width and height of the world
 type GameWorld struct {
-	width    float64
-	height   float64
-	tileList []ebitenqosmosclasses.Tile
+	width         float64
+	height        float64
+	tileList      []ebitenqosmosclasses.Tile
+	gridKeyChunks map[ebitenqosmosclasses.GridKey]*ebitenqosmosclasses.Chunk
 }
 
 func (g *GameWorld) initializeGameWorld(_worldWidth, _worldHeight float64, _tileList []ebitenqosmosclasses.Tile) {
@@ -35,7 +36,7 @@ type Game struct{}
 const (
 	screenWidth  = 1280
 	screenHeight = 720
-	tileSize     = 6
+	tileSize     = 17
 )
 
 // Variables that are chaneable and assignable
@@ -70,19 +71,22 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	// Loop through every tile and draw them each to the screen based on the current camera position.
 	// This needs to be completely different because if we have thousands of tiles, we want to only draw specific tiles to the screen, not every single tile ever
-	i := 0
+	//i := 0
 
-	for {
-		if i > len(gameWorld.tileList)-1 {
-			break
-		}
+	ebitenqosmosutils.DrawChunksNearPlayer(screenWidth, screenHeight, 16, screen, mainCamera, 400, gameWorld.gridKeyChunks)
 
-		op := &ebiten.DrawImageOptions{}
-		tileCoords := ebitenqosmosutils.CalculateScreenCoordinates(mainCamera, screenWidth, screenHeight, gameWorld.tileList[i])
-		op.GeoM.Translate(tileCoords.X, tileCoords.Y)
-		screen.DrawImage(gameWorld.tileList[i].TileImage, op)
-		i++
-	}
+	// for {
+	// 	if i > len(gameWorld.tileList)-1 {
+	// 		break
+	// 	}
+
+	// 	op := &ebiten.DrawImageOptions{}
+	// 	tileCoords := ebitenqosmosutils.CalculateScreenCoordinates(mainCamera, screenWidth, screenHeight, gameWorld.tileList[i])
+	// 	op.GeoM.Translate(tileCoords.X, tileCoords.Y)
+	// 	screen.DrawImage(gameWorld.tileList[i].TileImage, op)
+
+	// 	i++
+	// }
 
 }
 
@@ -91,21 +95,12 @@ func (g *Game) Layout(outsideWidth, outsideHeight int) (_screenWidth, _screenHei
 }
 
 func main() {
-	mainCamera.InitializeCamera(-400, -350) // Initialize the camera at coordinate (0, 0) of the game world
+	mainCamera.InitializeCamera(0, 0) // Initialize the camera at coordinate (0, 0) of the game world
 
-	// var tileWorld [][]ebitenqosmosclasses.Tile
-	// rowColLimit := 100
-
-	// for j := 0; j < rowColLimit; j++ {
-	// 	for i := 0; i < rowColLimit; i++ {
-
-	// 	}
-	// }
-
-	// gameWorld.tileList = gameWorld.tileList.append
+	gameWorld.gridKeyChunks = make(map[ebitenqosmosclasses.GridKey]*ebitenqosmosclasses.Chunk)
 	var tileWorld [][]ebitenqosmosclasses.Tile
 	var tileColor color.Color
-	rowColLimit := 100
+	rowColLimit := 150
 
 	for j := 0; j < rowColLimit; j++ {
 		var tileRow []ebitenqosmosclasses.Tile
@@ -122,11 +117,7 @@ func main() {
 
 			singleTile.GenerateImage()
 
-			fmt.Println("Tile Coords: X: ", float64(tileSize*i), " Y: ", float64(tileSize*j))
-
 			tileRow = append(tileRow, singleTile)
-
-			//gameWorld.tileList = append(gameWorld.tileList, singleTile)
 		}
 
 		tileWorld = append(tileWorld, tileRow)
@@ -139,6 +130,10 @@ func main() {
 	for startJ := 0; startJ < len(tileWorld); startJ += chunkSize {
 		for startI := 0; startI < len(tileWorld[startJ]); startI += chunkSize {
 			chunkCount++
+			//fmt.Println("GridKey X: ", int(tileWorld[startJ][startI].RealCoordinates.X)/chunkSize, " GridKey Y: ", int(tileWorld[startJ][startI].RealCoordinates.Y)/chunkSize)
+
+			chunkGridKey := ebitenqosmosutils.NewGridKey(int(tileWorld[startJ][startI].RealCoordinates.X)/chunkSize, int(tileWorld[startJ][startI].RealCoordinates.Y)/chunkSize)
+
 			newChunk := ebitenqosmosclasses.Chunk{}
 
 			for j := startJ; j < startJ+chunkSize; j++ {
@@ -151,27 +146,35 @@ func main() {
 						break
 					}
 					newChunk.TileList = append(newChunk.TileList, tileWorld[j][i])
+					newChunk.ChunkId = i + j
 					tileWorld[j][i].Color = color.RGBA{R: uint8(30 * chunkCount), G: uint8(30 * chunkCount), B: uint8(30 * chunkCount), A: 255}
 					tileWorld[j][i].GenerateImage()
 					gameWorld.tileList = append(gameWorld.tileList, tileWorld[j][i])
 				}
 			}
 
+			gameWorld.gridKeyChunks[chunkGridKey] = &newChunk
+
 			worldChunks = append(worldChunks, newChunk)
 		}
 	}
 
-	// Example output
-	for _, chunk := range worldChunks {
-		fmt.Printf("Chunk with %d tiles\n", len(chunk.TileList))
-	}
+	// for key := range gameWorld.gridKeyChunks {
+	// 	fmt.Println(key.X)
+	// 	fmt.Println(key.Y)
+	// }
 
-	// fmt.Println(len(gameWorld.tileList))
+	// // Example output
+	// for _, chunk := range worldChunks {
+	// 	fmt.Printf("Chunk with %d tiles\n", len(chunk.TileList))
+	// }
 
-	// //Example output
-	for _, chunk := range worldChunks {
-		fmt.Printf("Chunk with %d tiles\n", len(chunk.TileList))
-	}
+	// // fmt.Println(len(gameWorld.tileList))
+
+	// // //Example output
+	// for _, chunk := range worldChunks {
+	// 	fmt.Printf("Chunk with %d tiles\n", len(chunk.TileList))
+	// }
 
 	// ebiten setting basic window options
 	ebiten.SetWindowSize(screenWidth, screenHeight)
